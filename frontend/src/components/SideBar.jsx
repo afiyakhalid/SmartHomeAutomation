@@ -10,6 +10,7 @@ export default function Sidebar() {
       <Link to="/devices">Devices</Link>
       <Link to="/rooms">Rooms</Link>
       <Link to="/analytics">Analytics</Link>
+      <Link to="/automation">Automation</Link>
 
     </div>
   );
