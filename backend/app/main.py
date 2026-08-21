@@ -16,6 +16,7 @@ from app.routes.homes import router as home_router
 from app.routes.rooms import router as room_router
 from app.routes.auth import router as auth_router
 from app.routes.sensors import router as sensor_router
+from app.routes.automation import router as automation_router
 
 
 Base.metadata.create_all(bind=engine)
@@ -41,6 +42,7 @@ app.include_router(home_router)
 app.include_router(room_router)
 app.include_router(auth_router)
 app.include_router(sensor_router)
+app.include_router(automation_router)
 
 
 @app.get("/")

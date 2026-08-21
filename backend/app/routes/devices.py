@@ -8,11 +8,7 @@ from app.database.db import get_db
 from app.models.devices import Device
 from app.models.room import Room
 from app.schemas.device import DeviceCreate
-
-from app.auth.dependencies import (
-    get_current_user,
-    get_current_admin
-)
+from app.auth.dependencies import get_current_admin
 
 
 router = APIRouter(
@@ -21,20 +17,30 @@ router = APIRouter(
 )
 
 
+# --------------------------------------------------
+# GET ALL DEVICES
+# --------------------------------------------------
+
 @router.get("/")
 def get_devices(
-    current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
-    return db.query(Device).all()
+    devices = db.query(Device).all()
 
+    return devices
+
+
+# --------------------------------------------------
+# CREATE DEVICE
+# ADMIN ONLY
+# --------------------------------------------------
 
 @router.post("/")
 def create_device(
     device: DeviceCreate,
-    current_admin=Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin=Depends(get_current_admin)
 ):
 
     room = db.query(Room).filter(
@@ -61,10 +67,13 @@ def create_device(
     return new_device
 
 
+# --------------------------------------------------
+# GET DEVICES IN A ROOM
+# --------------------------------------------------
+
 @router.get("/room/{room_id}")
 def get_room_devices(
     room_id: int,
-    current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
@@ -78,15 +87,20 @@ def get_room_devices(
             detail="Room not found"
         )
 
-    return db.query(Device).filter(
+    devices = db.query(Device).filter(
         Device.room_id == room_id
     ).all()
 
+    return devices
+
+
+# --------------------------------------------------
+# GET SINGLE DEVICE
+# --------------------------------------------------
 
 @router.get("/{device_id}")
 def get_device(
     device_id: int,
-    current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
 
@@ -103,11 +117,60 @@ def get_device(
     return device
 
 
+# --------------------------------------------------
+# UPDATE DEVICE
+# ADMIN ONLY
+# --------------------------------------------------
+
+@router.put("/{device_id}")
+def update_device(
+    device_id: int,
+    device_data: DeviceCreate,
+    db: Session = Depends(get_db),
+    current_admin=Depends(get_current_admin)
+):
+
+    device = db.query(Device).filter(
+        Device.id == device_id
+    ).first()
+
+    if not device:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+
+    room = db.query(Room).filter(
+        Room.id == device_data.room_id
+    ).first()
+
+    if not room:
+        raise HTTPException(
+            status_code=404,
+            detail="Room not found"
+        )
+
+    device.name = device_data.name
+    device.type = device_data.type
+    device.room_id = device_data.room_id
+    device.status = device_data.status
+
+    db.commit()
+    db.refresh(device)
+
+    return device
+
+
+# --------------------------------------------------
+# TOGGLE DEVICE
+# ADMIN ONLY
+# --------------------------------------------------
+
 @router.put("/{device_id}/toggle")
 def toggle_device(
     device_id: int,
-    current_admin=Depends(get_current_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin=Depends(get_current_admin)
 ):
 
     device = db.query(Device).filter(
@@ -126,3 +189,33 @@ def toggle_device(
     db.refresh(device)
 
     return device
+
+
+# --------------------------------------------------
+# DELETE DEVICE
+# ADMIN ONLY
+# --------------------------------------------------
+
+@router.delete("/{device_id}")
+def delete_device(
+    device_id: int,
+    db: Session = Depends(get_db),
+    current_admin=Depends(get_current_admin)
+):
+
+    device = db.query(Device).filter(
+        Device.id == device_id
+    ).first()
+
+    if not device:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+
+    db.delete(device)
+    db.commit()
+
+    return {
+        "message": "Device deleted successfully"
+    }
