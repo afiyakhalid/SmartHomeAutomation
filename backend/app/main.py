@@ -10,6 +10,7 @@ from app.models.room import Room
 from app.models.devices import Device
 from app.models.homes import Home
 from app.models.sensor import SensorData
+from app.routes import ai
 
 from app.routes.devices import router as device_router
 from app.routes.homes import router as home_router
@@ -40,6 +41,7 @@ app.add_middleware(
 
 
 app.include_router(device_router)
+app.include_router(ai.router)
 app.include_router(home_router)
 app.include_router(room_router)
 app.include_router(auth_router)
